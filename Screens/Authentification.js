@@ -79,7 +79,8 @@ export default function Authentification(props) {
                 auth
                   .signInWithEmailAndPassword(email, pwd)
                   .then(() => {
-                    props.navigation.replace("Home");
+                    const currentid = auth.currentUser.uid;
+                    props.navigation.replace("Home", {currentid:currentid});
                   })
                   .catch((error) => {
                     alert(error);
