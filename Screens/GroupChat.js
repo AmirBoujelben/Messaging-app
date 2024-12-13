@@ -12,91 +12,69 @@ import React, { useState, useEffect, useRef } from "react";
 import firebase from "../Config";
 
 const database = firebase.database();
-const ref_lesdiscussions = database.ref("lesdiscussions");
+const ref_groupChats = database.ref("groupChats");
 
-export default function Chat(props) {
-  const currentUser = props.route.params.currentUser;
-  const secondUser = props.route.params.secondUser;
+export default function GroupChat(props) {
+  const currentid = props.route.params.currentid;
+  const [currentUser, setcurrentUser] = useState({});
+  useEffect(() => {
+    const fetchData = async () => {
+      const refProfile = database.ref(`TableProfils/unprofil${currentid}`);
+      const snapshot = await refProfile.once("value");
+      const data = snapshot.val();
+      if (data) {
+        setcurrentUser(data);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const iddisc =
-    currentUser.id > secondUser.id
-      ? currentUser.id + secondUser.id
-      : secondUser.id + currentUser.id;
-  const ref_unediscussion = ref_lesdiscussions.child(iddisc);
+  const groupId = props.route.params.groupId;
+
+  const ref_group = ref_groupChats.child(groupId);
 
   const [Msg, setMsg] = useState("");
   const [data, setData] = useState([]);
   const flatListRef = useRef(null);
 
-  const [typing, setTyping] = useState(false);
-
-  // Retrieve chat messages
   useEffect(() => {
-    const onValueChange = ref_unediscussion.on("value", (snapshot) => {
+    const onValueChange = ref_group.on("value", (snapshot) => {
       const messages = [];
-      snapshot.forEach((unmessage) => {
-        messages.push(unmessage.val());
+      snapshot.forEach((message) => {
+        messages.push(message.val());
       });
       setData(messages);
     });
 
     return () => {
-      ref_unediscussion.off("value", onValueChange);
+      ref_group.off("value", onValueChange);
     };
   }, []);
 
-  const filteredData = data.filter(
-    (item) => item.body && item.body.trim() !== ""
-  );
   const sendMessage = () => {
-    if (!Msg.trim()) return; // Prevent empty messages
+    if (!Msg.trim()) return;
 
-    const key = ref_unediscussion.push().key;
-    const ref_unmsg = ref_unediscussion.child(key);
+    const key = ref_group.push().key;
+    const ref_message = ref_group.child(key);
 
-    ref_unmsg
+    ref_message
       .set({
         body: Msg,
         time: new Date().toLocaleString(),
-        sender: currentUser.id,
-        receiver: secondUser.id,
+        senderId: currentUser.id,
+        senderName: currentUser.nom,
       })
-      .then(() => setMsg("")) // Clear input on success
+      .then(() => setMsg(""))
       .catch((error) => console.error("Error sending message:", error));
-  };
-
-  useEffect(() => {
-    const typingRef = ref_unediscussion.child("typing").child(secondUser.id);
-    typingRef.on("value", (snapshot) => {
-      setTyping(snapshot.val()); // Store true/false in a state variable
-    });
-
-    return () => typingRef.off();
-  }, []);
-  useEffect(() => {
-    const typingRef = ref_unediscussion.child("typing").child(currentUser.id);
-    return () => typingRef.set(false); // Clear typing status on cleanup
-  }, []);
-
-  const debounceTyping = useRef(null);
-
-  const handleTyping = (isTyping) => {
-    clearTimeout(debounceTyping.current);
-    debounceTyping.current = setTimeout(() => {
-      const typingRef = ref_unediscussion.child("typing").child(currentUser.id);
-      typingRef.set(isTyping);
-    }, 500); // Update Firebase only after 500ms of inactivity
   };
 
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={require("../assets/imgbleu.jpg")}
+        source={require("../assets/download.jpg")}
         style={styles.background}
       >
-        <Text style={styles.headerText}>
-          Chat {currentUser.nom} + {secondUser.nom}
-        </Text>
+        <Text style={styles.headerText}>Group Chat: {groupId}</Text>
         <View style={{ flex: 1, width: "100%", alignItems: "center" }}>
           <FlatList
             ref={flatListRef}
@@ -105,55 +83,36 @@ export default function Chat(props) {
             }
             onLayout={() => flatListRef.current.scrollToEnd({ animated: true })}
             style={styles.messageList}
-            data={filteredData}
+            data={data}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => {
-              const isCurrentUser = item.sender === currentUser.id;
+              const isCurrentUser = item.senderId === currentUser.id;
               const messageStyle = isCurrentUser
                 ? styles.currentUserMessage
                 : styles.otherUserMessage;
               const textColor = isCurrentUser ? "#FFF" : "#000";
-              const imguri = isCurrentUser
-                ? currentUser.uriimage
-                : secondUser.uriimage;
 
               return (
                 <View style={messageStyle}>
                   <View style={styles.messageBubble}>
-                    <Text style={{ color: textColor }}>{item.body}</Text>
+                    <Text style={{ color: textColor }}>
+                      {item.senderName}: {item.body}
+                    </Text>
                     <Text style={styles.timestamp}>{item.time}</Text>
                   </View>
-                  <Image
-                    source={{
-                      uri: imguri || "https://via.placeholder.com/50", // Default image if no URL
-                    }}
-                    style={styles.image}
-                  />
                 </View>
               );
             }}
           />
-          {typing && (
-            <View style={{ alignSelf: "flex-start", marginLeft: 10 }}>
-              <Text style={styles.typingIndicator}>
-                {secondUser.nom} is typing...
-              </Text>
-            </View>
-          )}
         </View>
 
         <View style={styles.inputContainer}>
           <TextInput
             value={Msg}
-            onChangeText={(text) => {
-              setMsg(text);
-              handleTyping(!!text.trim()); // Update typing status
-            }}
-            onEndEditing={() => handleTyping(false)} // Stop typing when input loses focus
+            onChangeText={setMsg}
             placeholder="Type a message"
             style={styles.textInput}
           />
-
           <TouchableHighlight
             activeOpacity={0.5}
             underlayColor="#DDDDDD"

@@ -17,30 +17,34 @@ export default function ListProfil(props) {
   const [data, setdata] = useState([]);
   const [currentUser, setcurrentUser] = useState({});
   const currentid = props.route.params.currentid;
-  // récupérer les données
+
   useEffect(() => {
+    // Listen to profile changes and filter connected users
     ref_TableProfils.on("value", (snapshot) => {
-      const d = [];
+      const connectedProfiles = [];
       snapshot.forEach((unprofil) => {
-        if (unprofil.val().id == currentid) {
-          setcurrentUser(unprofil.val());
-        } else d.push(unprofil.val());
+        const profilData = unprofil.val();
+        if (profilData.id === currentid) {
+          setcurrentUser(profilData);
+        } else if (profilData.status === "online") {
+          connectedProfiles.push(profilData); // Add only connected profiles
+        }
       });
-      setdata(d);
+      setdata(connectedProfiles); // Update the state with connected profiles
     });
 
     return () => {
       ref_TableProfils.off();
     };
-  }, []);
+  }, [currentid]);
 
   return (
     <ImageBackground
-      source={require("../../assets/imgbleu.jpg")}
+      source={require("../../assets/download.jpg")}
       style={styles.container}
     >
       <StatusBar style="light" />
-      <Text style={styles.textstyle}>List profils</Text>
+      <Text style={styles.textstyle}>Connected Profiles</Text>
       <FlatList
         style={{ backgroundColor: "#FFF3", width: "95%", borderRadius: 8 }}
         data={data}

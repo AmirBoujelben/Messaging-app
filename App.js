@@ -4,6 +4,7 @@ import NewUser from "./Screens/NewUser";
 import Chat from "./Screens/Chat";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import GroupChat from "./Screens/GroupChat";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,10 +19,11 @@ export default function App() {
         <Stack.Screen
           name="NewUser"
           component={NewUser}
-          options={{ headerShown: true }}
+          options={{ headerShown: false }}
         ></Stack.Screen>
         <Stack.Screen name="Home" component={Home}></Stack.Screen>
         <Stack.Screen name="Chat" component={Chat}></Stack.Screen>
+        <Stack.Screen name="GroupChat" component={GroupChat}></Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );

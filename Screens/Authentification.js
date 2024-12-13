@@ -20,9 +20,6 @@ export default function Authentification(props) {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <View
-        style={{ height: 28, width: "100%", backgroundColor: "#800040" }}
-      ></View>
       <ImageBackground
         style={{
           height: "100%",
@@ -80,7 +77,7 @@ export default function Authentification(props) {
                   .signInWithEmailAndPassword(email, pwd)
                   .then(() => {
                     const currentid = auth.currentUser.uid;
-                    props.navigation.replace("Home", {currentid:currentid});
+                    props.navigation.replace("Home", { currentid: currentid });
                   })
                   .catch((error) => {
                     alert(error);
@@ -123,6 +120,7 @@ const styles = StyleSheet.create({
     fontFamily: "serif",
     fontSize: 16,
     marginTop: 15,
+    marginBottom: 15,
     padding: 10,
     height: 60,
     width: "90%",

@@ -7,23 +7,24 @@ import {
   Text,
   TextInput,
   View,
+  ScrollView,
 } from "react-native";
 import firebase from "../Config";
 const auth = firebase.auth();
+const database = firebase.database();
 
 export default function NewUser(props) {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
-  const refinput2 = useRef();
-  const refinput3 = useRef();
+  const [nom, setNom] = useState("");
+  const [pseudo, setPseudo] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const refInput2 = useRef();
+  const refInput3 = useRef();
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
-      <View
-        style={{ height: 28, width: "100%", backgroundColor: "#800040" }}
-      ></View>
       <ImageBackground
         style={{
           height: "100%",
@@ -35,14 +36,20 @@ export default function NewUser(props) {
         resizeMode="cover"
         source={require("../assets/download.jpg")}
       >
-        <View
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1, // Ensures content can expand within the ScrollView
+            justifyContent: "center",
+            alignItems: "center",
+            paddingBottom: 20, // Add padding to avoid clipping at the bottom
+          }}
           style={{
             borderRadius: 8,
             backgroundColor: "#0005",
             width: "85%",
-            height: 300,
-            justifyContent: "flex-start",
-            alignItems: "center",
+            height: "70%", // Set the ScrollView to 80% of the screen height
+            marginTop: "20%", // Center ScrollView vertically
+            marginBottom: "10%", // Add margin to the bottom to ensure it doesn't touch the screen edge
           }}
         >
           <Text
@@ -56,62 +63,78 @@ export default function NewUser(props) {
             Register
           </Text>
           <TextInput
-            onChangeText={(txt) => setEmail(txt)}
+            onChangeText={setNom}
             style={styles.input}
-            placeholder="email"
+            placeholder="Name"
+            keyboardType="default"
+          />
+          <TextInput
+            onChangeText={setPseudo}
+            style={styles.input}
+            placeholder="Pseudo"
+            keyboardType="default"
+          />
+          <TextInput
+            onChangeText={setTelephone}
+            style={styles.input}
+            placeholder="Phone Number"
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            onChangeText={setEmail}
+            style={styles.input}
+            placeholder="Email"
             keyboardType="email-address"
-            onSubmitEditing={() => {
-              refinput2.current.focus();
-            }}
+            onSubmitEditing={() => refInput2.current.focus()}
             blurOnSubmit={false}
-          ></TextInput>
+          />
           <TextInput
-            ref={refinput2}
-            onChangeText={(txt) => setPwd(txt)}
+            ref={refInput2}
+            onChangeText={setPwd}
             style={styles.input}
-            placeholder="password"
-            keyboardType="default"
+            placeholder="Password"
             secureTextEntry={true}
-            onSubmitEditing={() => {
-              refinput3.current.focus();
-            }}
+            onSubmitEditing={() => refInput3.current.focus()}
             blurOnSubmit={false}
-          ></TextInput>
+          />
           <TextInput
-            ref={refinput3}
-            onChangeText={(txt) => setConfirmPwd(txt)}
+            ref={refInput3}
+            onChangeText={setConfirmPwd}
             style={styles.input}
-            placeholder="password"
-            keyboardType="default"
+            placeholder="Confirm Password"
             secureTextEntry={true}
-          ></TextInput>
+          />
           <View style={{ marginTop: 20, flexDirection: "row", gap: 15 }}>
             <Button
               onPress={() => {
                 if (pwd !== confirmPwd) {
-                  alert("les passwords ne sont pas identiques");
+                  alert("Passwords do not match!");
                 } else {
                   auth
                     .createUserWithEmailAndPassword(email, pwd)
                     .then(() => {
-                      const currentid = auth.currentUser.uid;
-                      props.navigation.replace("Home", {currentid:currentid});
+                      const currentId = auth.currentUser.uid;
+                      database.ref("TableProfils/unprofil" + currentId).set({
+                        id: currentId,
+                        nom,
+                        pseudo,
+                        telephone,
+                        email,
+                      });
+                      props.navigation.replace("Home", {
+                        currentid: currentId,
+                      });
                     })
                     .catch((error) => {
-                      alert(error);
+                      alert(error.message);
                     });
                 }
               }}
               title="Register"
-            ></Button>
-            <Button
-              onPress={() => {
-                props.navigation.goBack();
-              }}
-              title="Back"
-            ></Button>
+            />
+            <Button onPress={() => props.navigation.goBack()} title="Back" />
           </View>
-        </View>
+        </ScrollView>
       </ImageBackground>
     </View>
   );
@@ -121,8 +144,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f09",
-    alignItems: "center", // horizontal alignement
-    justifyContent: "flex-start", // vertical alignement
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   input: {
     fontFamily: "serif",
