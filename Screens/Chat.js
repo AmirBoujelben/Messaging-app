@@ -7,9 +7,12 @@ import {
   TextInput,
   TouchableHighlight,
   Image,
+  Linking,
+  TouchableOpacity,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import firebase from "../Config";
+import handleSendLocation from "../Utility/Location";
 
 const database = firebase.database();
 const ref_lesdiscussions = database.ref("lesdiscussions");
@@ -87,16 +90,17 @@ export default function Chat(props) {
       typingRef.set(isTyping);
     }, 500); // Update Firebase only after 500ms of inactivity
   };
+  function containsLink(string) {
+    return string.includes("https://");
+  }
 
   return (
     <View style={styles.container}>
       <ImageBackground
-        source={require("../assets/imgbleu.jpg")}
+        source={require("../assets/download.jpg")}
         style={styles.background}
       >
-        <Text style={styles.headerText}>
-          Chat {currentUser.nom} + {secondUser.nom}
-        </Text>
+        <Text style={styles.headerText}>Discussion with {secondUser.nom}</Text>
         <View style={{ flex: 1, width: "100%", alignItems: "center" }}>
           <FlatList
             ref={flatListRef}
@@ -112,15 +116,33 @@ export default function Chat(props) {
               const messageStyle = isCurrentUser
                 ? styles.currentUserMessage
                 : styles.otherUserMessage;
-              const textColor = isCurrentUser ? "#FFF" : "#000";
+              const messageBubleStyle = isCurrentUser
+                ? styles.currentUserMessageBuble
+                : styles.secondUserMessageBuble;
+
               const imguri = isCurrentUser
                 ? currentUser.uriimage
                 : secondUser.uriimage;
+              const handleLinkPress = () => {
+                const link = item.body.match(/https:\/\/\S+/)?.[0]; // Extract the URL from the message
+                if (link) {
+                  Linking.openURL(link).catch((err) =>
+                    console.error("Failed to open URL:", err)
+                  );
+                }
+              };
 
               return (
                 <View style={messageStyle}>
-                  <View style={styles.messageBubble}>
-                    <Text style={{ color: textColor }}>{item.body}</Text>
+                  <View style={messageBubleStyle}>
+                    {containsLink(item.body) ? (
+                      <TouchableOpacity onPress={handleLinkPress}>
+                        <Text style={{ color: "white" }}>{item.body}</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ color: "white" }}>{item.body}</Text>
+                    )}
+                    {/* <Text style={{ color: "white" }}>{item.body}</Text> */}
                     <Text style={styles.timestamp}>{item.time}</Text>
                   </View>
                   <Image
@@ -153,14 +175,24 @@ export default function Chat(props) {
             placeholder="Type a message"
             style={styles.textInput}
           />
-
           <TouchableHighlight
             activeOpacity={0.5}
             underlayColor="#DDDDDD"
             style={styles.sendButton}
             onPress={sendMessage}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Text style={styles.sendButtonText}>➤</Text>
+          </TouchableHighlight>
+          <TouchableHighlight
+            activeOpacity={0.5}
+            underlayColor="#DDDDDD"
+            style={styles.sendButton}
+            onPress={async () => {
+              let locationUrl = await handleSendLocation();
+              setMsg(locationUrl);
+            }}
+          >
+            <Text style={styles.sendButtonText}>⚲</Text>
           </TouchableHighlight>
         </View>
       </ImageBackground>
@@ -178,23 +210,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerText: {
-    marginTop: 50,
-    fontSize: 18,
+    marginVertical: 35,
+    fontSize: 26,
     fontWeight: "bold",
     color: "#FFF",
   },
   messageList: {
-    backgroundColor: "#FFF3",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     width: "90%",
     borderRadius: 8,
     height: "70%",
   },
-  messageBubble: {
+  currentUserMessageBuble: {
     margin: 5,
     padding: 10,
     borderRadius: 15,
     maxWidth: "75%",
-    backgroundColor: "blue",
+    backgroundColor: "#1e90ff",
+  },
+  secondUserMessageBuble: {
+    margin: 5,
+    padding: 10,
+    borderRadius: 15,
+    maxWidth: "75%",
+    backgroundColor: "gray",
   },
   currentUserMessage: {
     alignSelf: "flex-end",
@@ -210,7 +249,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 10,
-    color: "#AAA",
+    color: "#AA",
     marginTop: 5,
     textAlign: "right",
   },
@@ -220,33 +259,34 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontWeight: "bold",
-    backgroundColor: "#0004",
+    backgroundColor: "#fff",
     fontSize: 20,
-    color: "#fff",
+    color: "black",
     width: "65%",
     height: 50,
     borderRadius: 10,
     paddingHorizontal: 10,
   },
   sendButton: {
-    borderColor: "#00f",
-    borderWidth: 2,
-    backgroundColor: "#08f6",
+    backgroundColor: "#1e90ff",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 5,
+    borderRadius: 10,
     marginLeft: 10,
-    height: 50,
-    width: "30%",
+    width: "15%",
   },
   sendButtonText: {
     color: "#FFF",
-    fontSize: 18,
+    fontSize: 40,
+    marginBottom: 5,
   },
   image: {
     width: 50,
     height: 50,
     borderRadius: 25,
     marginHorizontal: 10,
+  },
+  typingIndicator: {
+    color: "white",
   },
 });

@@ -1,13 +1,12 @@
 import { StatusBar } from "expo-status-bar";
 import { useRef, useState } from "react";
 import {
-  Button,
-  ImageBackground,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ImageBackground,
 } from "react-native";
 import firebase from "../Config";
 const auth = firebase.auth();
@@ -21,87 +20,51 @@ export default function Authentification(props) {
     <View style={styles.container}>
       <StatusBar style="light" />
       <ImageBackground
-        style={{
-          height: "100%",
-          width: "100%",
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+        style={styles.backgroundImage}
         resizeMode="cover"
         source={require("../assets/download.jpg")}
       >
-        <View
-          style={{
-            borderRadius: 8,
-            backgroundColor: "#0005",
-            width: "85%",
-            height: 300,
-            justifyContent: "flex-start",
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: "bold",
-              color: "white",
-              marginTop: 15,
-            }}
-          >
-            Authentification
-          </Text>
+        <View style={styles.authBox}>
+          <Text style={styles.title}>Welcome Back</Text>
           <TextInput
             onChangeText={(txt) => setEmail(txt)}
             style={styles.input}
-            placeholder="email"
+            placeholder="Email"
+            placeholderTextColor="#aaa"
             keyboardType="email-address"
-            onSubmitEditing={() => {
-              refinput2.current.focus();
-            }}
+            onSubmitEditing={() => refinput2.current.focus()}
             blurOnSubmit={false}
-          ></TextInput>
+          />
           <TextInput
             ref={refinput2}
             onChangeText={(txt) => setPwd(txt)}
             style={styles.input}
-            placeholder="password"
+            placeholder="Password"
+            placeholderTextColor="#aaa"
             keyboardType="default"
-            secureTextEntry={true}
-          ></TextInput>
-          <Button
-            title="Sign in"
+            secureTextEntry
+          />
+          <TouchableOpacity
+            style={styles.button}
             onPress={() => {
               if (email !== "" && pwd !== "") {
                 auth
                   .signInWithEmailAndPassword(email, pwd)
                   .then(() => {
                     const currentid = auth.currentUser.uid;
-                    props.navigation.replace("Home", { currentid: currentid });
+                    props.navigation.replace("Home", { currentid });
                   })
-                  .catch((error) => {
-                    alert(error);
-                  });
-              } else alert("error");
+                  .catch((error) => alert(error));
+              } else alert("Please fill in all fields!");
             }}
           >
-            Sign in
-          </Button>
+            <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
           <TouchableOpacity
-            style={{
-              paddingRight: 10,
-              width: "100%",
-              alignItems: "flex-end",
-            }}
+            style={styles.createAccount}
+            onPress={() => props.navigation.navigate("NewUser")}
           >
-            <Text
-              style={{ fontWeight: "bold", color: "white" }}
-              onPress={() => {
-                props.navigation.navigate("NewUser");
-              }}
-            >
-              Create new user
-            </Text>
+            <Text style={styles.createAccountText}>Create a new account</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -112,20 +75,57 @@ export default function Authentification(props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f09",
-    alignItems: "center", // horizontal alignement
-    justifyContent: "flex-start", // vertical alignement
+    backgroundColor: "#000",
+  },
+  backgroundImage: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  authBox: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 20,
+    borderRadius: 10,
+    width: "85%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
   },
   input: {
-    fontFamily: "serif",
+    width: "100%",
+    height: 50,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 15,
     fontSize: 16,
-    marginTop: 15,
+    color: "#333",
     marginBottom: 15,
-    padding: 10,
-    height: 60,
-    width: "90%",
-    borderRadius: 2.5,
-    textAlign: "center",
-    backgroundColor: "white",
+  },
+  button: {
+    backgroundColor: "#1e90ff",
+    paddingVertical: 15,
+    borderRadius: 8,
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  createAccount: {
+    marginTop: 15,
+  },
+  createAccountText: {
+    color: "#1e90ff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });

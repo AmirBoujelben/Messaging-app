@@ -7,12 +7,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableHighlight,
+  TouchableOpacity,
   View,
   Alert,
 } from "react-native";
 import firebase from "../../Config";
 const database = firebase.database();
+const auth = firebase.auth();
 import { supabase } from "../../Config";
 
 export default function MyProfil(props) {
@@ -51,17 +52,40 @@ export default function MyProfil(props) {
     }
   };
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypes,
-      allowsEditing: false,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const pickImage = async (useCamera) => {
+    try {
+      // Request permissions based on the choice
+      const permission = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!result.canceled) {
-      setIsDefaultImage(false);
-      setUriImage(result.assets[0].uri);
+      if (permission.status !== "granted") {
+        alert(
+          `Permission to access ${useCamera ? "camera" : "gallery"} was denied`
+        );
+        return;
+      }
+
+      // Open camera or gallery
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            allowsEditing: false,
+            aspect: [4, 3],
+            quality: 1,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypes,
+            allowsEditing: false,
+            aspect: [4, 3],
+            quality: 1,
+          });
+
+      if (!result.canceled) {
+        setIsDefaultImage(false);
+        setUriImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
     }
   };
 
@@ -103,106 +127,154 @@ export default function MyProfil(props) {
     }
   };
 
+  const handleImagePick = () => {
+    Alert.alert("Upload Picture", "", [
+      { text: "Open Camera", onPress: () => pickImage(true) },
+      { text: "Select from Gallery", onPress: () => pickImage(false) },
+    ]);
+  };
+
   return (
     <ImageBackground
       source={require("../../assets/download.jpg")}
       style={styles.container}
     >
-      <StatusBar style="light" />
-      <Text style={styles.textStyle}>My Account</Text>
-      <TouchableHighlight onPress={pickImage}>
-        <Image
-          source={
-            isDefaultImage
-              ? require("../../assets/profil.png")
-              : { uri: uriImage }
-          }
-          style={{
-            borderRadius: 100,
-            height: 200,
-            width: 200,
-          }}
+      <View style={styles.box}>
+        <Text style={styles.textStyle}>My Account</Text>
+
+        {/* Profile Image */}
+        <TouchableOpacity
+          onPress={handleImagePick}
+          style={styles.profileImageContainer}
+        >
+          <Image
+            source={
+              isDefaultImage
+                ? require("../../assets/profil.png")
+                : { uri: uriImage }
+            }
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
+
+        {/* Name Input */}
+        <TextInput
+          onChangeText={setNom}
+          value={nom}
+          textAlign="center"
+          placeholderTextColor="#fff"
+          placeholder="Name"
+          style={styles.textInputStyle}
         />
-      </TouchableHighlight>
-      <TextInput
-        onChangeText={setNom}
-        value={nom}
-        textAlign="center"
-        placeholderTextColor="#fff"
-        placeholder="Name"
-        style={styles.textInputStyle}
-      />
-      <TextInput
-        onChangeText={setPseudo}
-        value={pseudo}
-        textAlign="center"
-        placeholderTextColor="#fff"
-        placeholder="Pseudo"
-        style={styles.textInputStyle}
-      />
-      <TextInput
-        onChangeText={setTelephone}
-        value={telephone}
-        placeholderTextColor="#fff"
-        textAlign="center"
-        placeholder="Phone Number"
-        keyboardType="phone-pad"
-        style={styles.textInputStyle}
-      />
-      <TouchableHighlight
-        activeOpacity={0.5}
-        underlayColor="#DDDDDD"
-        style={styles.saveButton}
-        onPress={saveProfile}
-      >
-        <Text style={{ color: "#FFF", fontSize: 24 }}>Save</Text>
-      </TouchableHighlight>
-      <TouchableHighlight
-        activeOpacity={0.5}
-        underlayColor="#DDDDDD"
-        style={styles.saveButton}
-        onPress={() => {
-          props.navigation.replace("Authentification");
-        }}
-      >
-        <Text style={{ color: "#FFF", fontSize: 24 }}>Disconnect</Text>
-      </TouchableHighlight>
+
+        {/* Pseudo Input */}
+        <TextInput
+          onChangeText={setPseudo}
+          value={pseudo}
+          textAlign="center"
+          placeholderTextColor="#fff"
+          placeholder="Pseudo"
+          style={styles.textInputStyle}
+        />
+
+        {/* Phone Number Input */}
+        <TextInput
+          onChangeText={setTelephone}
+          value={telephone}
+          placeholderTextColor="#fff"
+          textAlign="center"
+          placeholder="Phone Number"
+          keyboardType="phone-pad"
+          style={styles.textInputStyle}
+        />
+
+        {/* Save Button */}
+        <TouchableOpacity style={styles.buttonStyle} onPress={saveProfile}>
+          <Text style={styles.buttonText}>Save</Text>
+        </TouchableOpacity>
+
+        {/* Disconnect Button */}
+        <TouchableOpacity
+          style={[styles.buttonStyle, styles.disconnectButton]}
+          onPress={() => {
+            auth
+              .signOut()
+              .then(() => {
+                props.navigation.replace("Authentification");
+              })
+              .catch((error) => {
+                console.error("Error signing out:", error.message);
+              });
+          }}
+        >
+          <Text style={styles.buttonText}>Disconnect</Text>
+        </TouchableOpacity>
+      </View>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  textInputStyle: {
-    fontWeight: "bold",
-    backgroundColor: "#0004",
-    fontSize: 20,
-    color: "#fff",
-    width: "75%",
-    height: 50,
-    borderRadius: 10,
-    margin: 5,
-  },
-  textStyle: {
-    fontSize: 40,
-    fontFamily: "serif",
-    color: "#07f",
-    fontWeight: "bold",
-  },
   container: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
-  saveButton: {
-    marginBottom: 10,
-    borderColor: "#00f",
-    borderWidth: 2,
-    backgroundColor: "#08f6",
-    height: 60,
-    width: "50%",
+  box: {
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    borderRadius: 10,
+    padding: 20,
+    width: "90%",
+    alignItems: "center",
+  },
+  profileImageContainer: {
+    marginBottom: 20,
+  },
+  profileImage: {
+    borderRadius: 100,
+    height: 200,
+    width: 200,
+    borderWidth: 4,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  textInputStyle: {
+    fontWeight: "bold",
+    backgroundColor: "#fff",
+    fontSize: 18,
+    color: "black",
+    width: "80%",
+    height: 50,
+    borderRadius: 12,
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  textStyle: {
+    fontSize: 36,
+    color: "#fff",
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  buttonStyle: {
+    width: "80%",
+    backgroundColor: "#1e90ff",
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 5,
+    borderRadius: 12,
     marginTop: 20,
+    marginBottom: 10,
+  },
+  disconnectButton: {
+    backgroundColor: "#f44336",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

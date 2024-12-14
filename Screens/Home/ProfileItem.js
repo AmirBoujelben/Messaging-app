@@ -4,12 +4,20 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 export default function ProfileItem({ profile, onPress }) {
   return (
     <View style={styles.container}>
-      <Image
-        source={{
-          uri: profile.uriimage || "https://via.placeholder.com/50", // Default image if no URL
-        }}
-        style={styles.image}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={{
+            uri: profile.uriimage || "https://via.placeholder.com/50", // Default image if no URL
+          }}
+          style={styles.image}
+        />
+        <View
+          style={[
+            styles.statusCircle,
+            { backgroundColor: profile.status === "online" ? "green" : "red" },
+          ]}
+        />
+      </View>
       <View style={styles.details}>
         <Text style={styles.name}>{profile.nom}</Text>
         <TouchableOpacity style={styles.button} onPress={onPress}>
@@ -34,11 +42,24 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
+  imageContainer: {
+    position: "relative",
+  },
   image: {
     width: 50,
     height: 50,
     borderRadius: 25,
     marginRight: 10,
+  },
+  statusCircle: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#FFF", // White border to make the circle stand out
   },
   details: {
     flex: 1,
